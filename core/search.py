@@ -1,13 +1,20 @@
-def facet_search_all(client, search_path, payload_base, page_size=2000):
+from .client import AsyncWorkdayClient
+
+async def facet_search_all(
+    client: AsyncWorkdayClient,
+    search_path: str,
+    payload_base: dict,
+    page_size: int = 2000,
+):
     offset = 0
-    job_ids = []
+    job_ids: list[str] = []
 
     while True:
         payload = payload_base.copy()
         payload["limit"] = page_size
         payload["offset"] = offset
 
-        data = client.post(search_path, json=payload)
+        data = await client.post(search_path, json=payload)
 
         postings = (
             data.get("jobPostings")
