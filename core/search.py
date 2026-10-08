@@ -1,5 +1,6 @@
 from .client import AsyncWorkdayClient
 
+
 async def facet_search_all(
     client: AsyncWorkdayClient,
     search_path: str,
@@ -15,6 +16,11 @@ async def facet_search_all(
         payload["offset"] = offset
 
         data = await client.post(search_path, json=payload)
+
+        # Alguns tenants retornam "total" explícito
+        total = data.get("total")
+        if total == 0:
+            break
 
         postings = (
             data.get("jobPostings")
