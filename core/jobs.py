@@ -1,7 +1,21 @@
-def fetch_job_details(client, job_path_template, job_ids):
-    jobs = []
-    for job_id in job_ids:
-        path = job_path_template.format(job_id=job_id)
-        data = client.get(path)
-        jobs.append(data)
-    return jobs
+import asyncio
+from .client import AsyncWorkdayClient
+
+async def _fetch_one_job(client: AsyncWorkdayClient, job_path_template: str, job_id: str):
+    path = job_path_template.format(job_id=job_id)
+    return await client.get(path)
+
+async def fetch_job_details(
+    client: AsyncWorkdayClient,
+    job_path_template: str,
+    job_ids: list[str],
+    concurrency: int = 20,
+):
+    sem = asyncio.Semaphore(concurrency)
+
+    async def wrapped(job_id: str):
+        async with sem:
+            return await _fetch_one_job(client, job_path_template, job_id)
+
+    tasks = [wrapped(jid) for jid in job_ids]
+    return await asyncio.gather(*tasks)
