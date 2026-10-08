@@ -1,23 +1,27 @@
-import requests
+import aiohttp
 
-class WorkdayClient:
+class AsyncWorkdayClient:
     def __init__(self, base_url: str, token: str):
         self.base_url = base_url.rstrip("/")
-        self.session = requests.Session()
-        self.session.headers.update({
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        })
+        self.session = aiohttp.ClientSession(
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            }
+        )
 
-    def post(self, path: str, json: dict):
+    async def post(self, path: str, json: dict):
         url = f"{self.base_url}{path}"
-        resp = self.session.post(url, json=json, timeout=30)
-        resp.raise_for_status()
-        return resp.json()
+        async with self.session.post(url, json=json, timeout=30) as resp:
+            resp.raise_for_status()
+            return await resp.json()
 
-    def get(self, path: str, params: dict | None = None):
+    async def get(self, path: str, params: dict | None = None):
         url = f"{self.base_url}{path}"
-        resp = self.session.get(url, params=params or {}, timeout=30)
-        resp.raise_for_status()
-        return resp.json()
+        async with self.session.get(url, params=params or {}, timeout=30) as resp:
+            resp.raise_for_status()
+            return await resp.json()
+
+    async def close(self):
+        await self.session.close()
